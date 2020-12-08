@@ -5,16 +5,20 @@
         <main>
             <router-view/>
         </main>
+
+        <Footer></Footer>
     </div>
 </template>
 
 <script>
 import Nav from '@/components/Nav';
+import Footer from '@/components/Footer'
 
 export default  {
     name: "app",
     components: {
-        Nav
+        Nav,
+        Footer
     }
 }
 </script>
