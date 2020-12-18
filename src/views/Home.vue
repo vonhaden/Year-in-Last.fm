@@ -17,6 +17,7 @@ export default {
         return {
             tracks: [ ],
             artists: [ ],
+            songs: [ ],
             status: 'waiting',
             year: null,
             apiURL: 'https://ws.audioscrobbler.com/2.0/',
@@ -35,12 +36,15 @@ export default {
     },
     watch: {
         tracks: {
-            handler: 'getTopArtists'
+            handler: 'processData'
         }
     },
     methods: {
         dateToTime(date){
            return new Date(date).getTime()/1000;
+        },
+        async getDistinct(array){
+            return [... new Set(array)]
         },
         async pullLastFMInfo(){
             let params = this.apiParams;
@@ -85,8 +89,62 @@ export default {
 
             return list;
         },
-        async getDistinct(array){
-            return [... new Set(array)]
+        async populateSongsArray(tracks){
+            let list = [];
+
+            tracks.forEach((track) => {
+                let song = {};
+                song.name = track.name;
+                song.album = track['album']['#text']
+                song.artist = track['artist']['#text'];
+                song.url = track.url;
+                song.image = track.image[3]['#text'];
+
+                list.push(song);
+            })
+
+            return list;
+        },
+        async arrayToJSON(array){
+            let list = [];
+
+            array.forEach((object) => {
+                list.push(JSON.stringify(object));
+            })
+
+            return list;
+        },
+        async songPlayCount(songs, distinctSongs){
+            let list = [];
+
+            // Find the number of plays for each artist, create an object with name and plays, and object to list
+            distinctSongs.forEach((distinctSong) => {
+                let count = 0;
+
+                songs.forEach((song) => {
+                    if (song === distinctSong) { count++ }
+                })
+
+                let formattedSong = JSON.parse(distinctSong);
+                formattedSong.plays = count;
+
+                list.push(formattedSong);
+
+            })
+
+            // Sort the array of objects base on play count
+            list.sort((a, b) => {
+                return  b.plays - a.plays;
+            })
+
+            // TODO: Fix jank workaround for now playing track
+            // Remove track from top song list if it currently is being played
+            // If a song is currently being played it randomly have a high number of plays
+            if (this.tracks[0]['@attr']){
+                list.shift();
+            }
+
+            return list;
         },
         async artistPlayCount(artists, distinctArtists){
             // Create an empty array
@@ -122,6 +180,25 @@ export default {
             let artistPlays = await this.artistPlayCount(artists, distinctArtists);
 
             this.artists = artistPlays;
+        },
+        async getTopSongs(){
+            // Create and array filled with song objects
+            const songs = await this.populateSongsArray(this.tracks);
+
+            // Convert the objects to JSON for comparison
+            let songsJSON = await this.arrayToJSON(songs);
+
+            // Get the unique tracks
+            let distinctSongsJSON = await this.getDistinct(songsJSON);
+
+            // Get the playcount of each track and convert it fron JSON to objest
+            let songPlayCount = await this.songPlayCount(songsJSON, distinctSongsJSON)
+
+            this.songs = songPlayCount;
+        },
+        processData(){
+            this.getTopArtists();
+            this.getTopSongs();
         }
     },
     mounted () {
