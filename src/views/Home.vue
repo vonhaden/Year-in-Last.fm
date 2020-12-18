@@ -1,10 +1,11 @@
 <template>
     <b-container class="home">
+        <b-button @click="pullLastFMInfo">Run</b-button>
+        <b-button @click="getTopArtists">Artists</b-button>
+
         <div v-for="(track, index) in tracks" :key="index">
             <p>{{ track.name }} - {{ track.artist['#text'] }}</p>
         </div>
-        <b-button @click="pullInfo">Run</b-button>
-        <b-button @click="getTopArtists">Artists</b-button>
     </b-container>
 </template>
 
@@ -17,7 +18,7 @@ export default {
         return {
             tracks: [ ],
             artists: [ ],
-            distinctArtists: [ ],
+            status: 'waiting',
             year: null,
             apiURL: 'https://ws.audioscrobbler.com/2.0/',
             username: 'itochan60',
@@ -33,11 +34,16 @@ export default {
             },
         }
     },
+    watch: {
+        tracks: {
+            handler: 'getTopArtists'
+        }
+    },
     methods: {
         dateToTime(date){
            return new Date(date).getTime()/1000;
         },
-        pullInfo(){
+        async pullLastFMInfo(){
             let params = this.apiParams;
 
             axios.get( this.apiURL, { params } )
@@ -64,8 +70,6 @@ export default {
                                 page.data.recenttracks.track.forEach((track) => {
                                     this.tracks.push(track);
                                 })
-
-                                // this.getTopArtists(this.tracks);
                             })
 
                             // console.log(response);
@@ -74,12 +78,16 @@ export default {
                 });
         },
         async populateArtistsArray(tracks){
+            let list = [];
+
             tracks.forEach((track) => {
-                this.artists.push(track['artist']['#text']);
+                list.push(track['artist']['#text']);
             })
+
+            return list;
         },
-        async getDistinctArtists(array){
-            this.distinctArtists = [... new Set(array)]
+        async getDistinct(array){
+            return [... new Set(array)]
         },
         async artistPlayCount(artists, distinctArtists){
             // Create an empty array
@@ -105,15 +113,17 @@ export default {
             return list;
         },
         async getTopArtists(){
-            await this.populateArtistsArray(this.tracks);
+            let artists = [];
+            let distinctArtists = [];
 
-            await this.getDistinctArtists(this.artists)
+            artists = await this.populateArtistsArray(this.tracks);
 
-            let artistPlays = await this.artistPlayCount(this.artists, this.distinctArtists);
+            distinctArtists = await this.getDistinct(artists)
+
+            let artistPlays = await this.artistPlayCount(artists, distinctArtists);
 
             console.log(artistPlays);
         }
-
     },
     mounted () {
         let date = new Date;
