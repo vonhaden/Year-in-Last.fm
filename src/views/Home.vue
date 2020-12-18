@@ -1,10 +1,9 @@
 <template>
     <b-container class="home">
         <b-button @click="pullLastFMInfo">Run</b-button>
-        <b-button @click="getTopArtists">Artists</b-button>
 
-        <div v-for="(track, index) in tracks" :key="index">
-            <p>{{ track.name }} - {{ track.artist['#text'] }}</p>
+        <div v-for="(artist, index) in artists.slice(0, 10)" :key="index">
+            <p>{{ index + 1 }}. {{ artist.name }} - {{ artist.plays }}</p>
         </div>
     </b-container>
 </template>
@@ -101,7 +100,7 @@ export default {
                     if (v === artist) { count++ }
                 })
 
-                list.push({artist: artist, plays: count});
+                list.push({name: artist, plays: count});
 
             })
 
@@ -122,7 +121,7 @@ export default {
 
             let artistPlays = await this.artistPlayCount(artists, distinctArtists);
 
-            console.log(artistPlays);
+            this.artists = artistPlays;
         }
     },
     mounted () {
