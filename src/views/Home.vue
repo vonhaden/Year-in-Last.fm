@@ -29,6 +29,7 @@ export default {
             tracks: [ ],
             artists: [ ],
             songs: [ ],
+            albums: [ ],
             status: 'waiting',
             year: null,
             apiURL: 'https://ws.audioscrobbler.com/2.0/',
@@ -82,11 +83,17 @@ export default {
                             // Pull the Tracks out of the Response
                             response.forEach((page) => {
                                 page.data.recenttracks.track.forEach((track) => {
-                                    this.tracks.push(track);
+                                    let song = {};
+                                    song.name = track.name;
+                                    song.album = track['album']['#text']
+                                    song.artist = track['artist']['#text'];
+                                    song.url = track.url;
+                                    song.image = track.image[3]['#text'];
+
+                                    this.tracks.push(song);
                                 })
                             })
 
-                            // console.log(response);
                         })
                         .catch((error) => console.log(error))
                 });
@@ -95,23 +102,7 @@ export default {
             let list = [];
 
             tracks.forEach((track) => {
-                list.push(track['artist']['#text']);
-            })
-
-            return list;
-        },
-        async populateSongsArray(tracks){
-            let list = [];
-
-            tracks.forEach((track) => {
-                let song = {};
-                song.name = track.name;
-                song.album = track['album']['#text']
-                song.artist = track['artist']['#text'];
-                song.url = track.url;
-                song.image = track.image[3]['#text'];
-
-                list.push(song);
+                list.push(track.artist);
             })
 
             return list;
@@ -193,19 +184,14 @@ export default {
             this.artists = artistPlays;
         },
         async getTopSongs(){
-            // Create and array filled with song objects
-            const songs = await this.populateSongsArray(this.tracks);
-
             // Convert the objects to JSON for comparison
-            let songsJSON = await this.arrayToJSON(songs);
+            let songsJSON = await this.arrayToJSON(this.tracks);
 
             // Get the unique tracks
             let distinctSongsJSON = await this.getDistinct(songsJSON);
 
-            // Get the playcount of each track and convert it fron JSON to objest
-            let songPlayCount = await this.songPlayCount(songsJSON, distinctSongsJSON)
-
-            this.songs = songPlayCount;
+            // Get the play count of each track and convert it from JSON to object
+            this.songs = await this.songPlayCount(songsJSON, distinctSongsJSON);
         },
         processData(){
             this.getTopArtists();
