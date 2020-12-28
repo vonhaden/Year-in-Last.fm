@@ -1,9 +1,20 @@
 <template>
     <b-container class="home">
-        <b-button @click="pullLastFMInfo">Run</b-button>
+        <b-button @click="pullLastFMInfo" v-if="!tracks.length">Run</b-button>
 
-        <div v-for="(artist, index) in artists.slice(0, 10)" :key="index">
-            <p>{{ index + 1 }}. {{ artist.name }} - {{ artist.plays }}</p>
+        <div v-if="artists.length">
+            <h2>Top Artists</h2>
+            <div v-for="(artist, index) in artists.slice(0, 10)" :key="index">
+                <p>{{ index + 1 }}. {{ artist.name }} - {{ artist.plays }}</p>
+            </div>
+            <hr>
+        </div>
+
+        <div v-if="songs.length">
+            <h2>Top Songs</h2>
+            <div v-for="(song, index) in songs.slice(0, 10)" :key="index">
+                <p>{{ index + 1 }}. {{ song.name }} - {{ song.artist }} ({{ song.plays }} plays)</p>
+            </div>
         </div>
     </b-container>
 </template>
