@@ -119,7 +119,11 @@ export default {
                                     song.url = track.url;
                                     song.image = track.image[3]['#text'];
 
-                                    this.tracks.push(song);
+                                    // Do not add track if it is currently playing
+                                    // This will cause a play count error
+                                    if (!track['@attr']){
+                                        this.tracks.push(song);
+                                    }
                                 })
                             })
 
@@ -175,13 +179,6 @@ export default {
             list.sort((a, b) => {
                 return  b.plays - a.plays;
             })
-
-            // TODO: Fix jank workaround for now playing track
-            // Remove track from top song list if it currently is being played
-            // If a song is currently being played it randomly have a high number of plays
-            if (this.tracks[0]['@attr']){
-                list.shift();
-            }
 
             return list;
         },
