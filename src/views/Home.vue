@@ -1,6 +1,20 @@
 <template>
     <b-container class="home">
-        <b-button @click="pullLastFMInfo" v-if="!tracks.length">Run</b-button>
+        <b-form @submit="pullLastFMInfo" v-if="!tracks.length">
+            <b-form-group
+                id="username-group"
+                label="Username:"
+                label-for="username"
+            >
+                <b-form-input
+                    id="username"
+                    v-model="username"
+                    placeholder="Last.fm Username"
+                    required
+                ></b-form-input>
+            </b-form-group>
+            <b-button type="submit" variant="primary">Get Your Stats</b-button>
+        </b-form>
 
         <div>
             <p>{{status}}</p>
@@ -45,11 +59,11 @@ export default {
             status: 'Waiting',
             year: null,
             apiURL: 'https://ws.audioscrobbler.com/2.0/',
-            username: 'itochan60',
+            username: '',
             apiParams: {
                 method: 'user.getRecentTracks',
                 api_key: '75a043b2c8351867a2af03680101f7bd',
-                user: 'itochan60',
+                user: '',
                 format: 'json',
                 limit: 200,
                 page: 1,
@@ -61,11 +75,17 @@ export default {
     watch: {
         tracks: {
             handler: 'processData'
+        },
+        username: {
+            handler: 'updateAPIUserParam'
         }
     },
     methods: {
         dateToTime(date){
            return new Date(date).getTime()/1000;
+        },
+        updateAPIUserParam(){
+            this.apiParams.user = this.username;
         },
         processData(){
             this.getTopArtists();
@@ -89,7 +109,8 @@ export default {
 
             let params = this.apiParams;
 
-            axios.get( this.apiURL, { params } )
+            axios
+                .get( this.apiURL, { params } )
                 .then((response) => {
                     // Set a variable for the total number of pages (total tracks / per page)
                     let totalPages = Number(response.data['recenttracks']['@attr']['totalPages']);
@@ -132,7 +153,11 @@ export default {
                             console.log(error);
                             this.status = error;
                         })
-                });
+                })
+                .catch((error) => {
+                    console.log(error);
+                    this.status = error;
+                })
         },
         async populateArtistsArray(tracks){
             let list = [];
